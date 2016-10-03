@@ -12,6 +12,8 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+buildDir = "${project.projectDir}/gbuild"
+
 ext.mainClass = project.hasProperty('mainClass') ?
     project.getProperty('mainClass') :
     'edu.cwu.cs301.bb010g.pr1.Fallback'
