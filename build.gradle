@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'jacoco'
     id 'eclipse'
 }
 
@@ -9,7 +10,10 @@ repositories {
 }
 
 dependencies {
+    testCompile 'org.slf4j:slf4j-api:1.7.21'
     testCompile 'junit:junit:4.12'
+    testCompile 'com.pholser:junit-quickcheck-core:0.6.1'
+    testCompile 'com.pholser:junit-quickcheck-generators:0.6.1'
 }
 
 buildDir = "${project.projectDir}/gbuild"
@@ -18,3 +22,11 @@ ext.mainClass = project.hasProperty('mainClass') ?
     project.getProperty('mainClass') :
     'edu.cwu.cs301.bb010g.pr1.Fallback'
 mainClassName = ext.mainClass
+
+jacocoTestReport {
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: 'edu/cwu/cs301/bb010g/pr1/Fallback.class')
+        })
+    }
+}
