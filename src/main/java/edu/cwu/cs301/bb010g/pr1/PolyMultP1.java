@@ -5,13 +5,17 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 // TODO JavaDoc
 public class PolyMultP1 {
@@ -20,10 +24,7 @@ public class PolyMultP1 {
         final InputStreamReader isr = new InputStreamReader(fis);
         final BufferedReader br = new BufferedReader(isr);) {
 
-      final List<Integer> product = br.lines().filter(s -> !s.isEmpty())
-          .map(str -> PolyMultP1.parseBinomialDec(str.toCharArray()))
-          .reduce(Collections.singletonList(1), PolyMultP1::polyMult);
-
+      final List<Integer> product = readPolyMult(br);
       System.out.println(PolyMultP1.formatPolyDec(product));
 
     } catch (final FileNotFoundException e) {
@@ -33,48 +34,136 @@ public class PolyMultP1 {
     }
   }
 
-  // TODO JavaDoc (make sure to explain algorithm)
+  public static List<Integer> readPolyMult(final BufferedReader br) throws IOException {
+    final Deque<List<Integer>> polys = new ArrayDeque<>();
+    final List<Integer> foldThresholds = new ArrayList<>();
+    foldThresholds.add(0);
+
+    while (true) {
+      final String line = br.readLine();
+      if (line == null || line.isEmpty()) {
+        break;
+      }
+
+      polys.push(PolyMultP1.parseBinomialDec(line.toCharArray()));
+      foldThresholds.set(0, foldThresholds.get(0) + 1);
+
+      int fti;
+      while ((fti = foldThresholds.indexOf(2)) != -1) {
+        final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
+        System.out.println("Folding (" + fti + ") (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
+            + PolyMultP1.formatPolyInc(poly2) + ")");
+        polys.push(PolyMultP1.polyMult(poly1, poly2));
+        foldThresholds.set(fti, 0);
+        if (foldThresholds.size() == fti + 1) {
+          foldThresholds.add(fti + 1, 1);
+        } else {
+          foldThresholds.set(fti + 1, foldThresholds.get(fti + 1) + 1);
+        }
+      }
+    }
+
+    if (polys.isEmpty()) {
+      polys.push(Collections.singletonList(1));
+    } else {
+      while (polys.size() > 1) {
+        final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
+        System.out.println("Folding (end) (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
+            + PolyMultP1.formatPolyInc(poly2) + ")");
+        polys.push(PolyMultP1.polyMult(poly1, poly2));
+      }
+    }
+    return polys.pop();
+  }
+
   public static List<Integer> polyMult(final List<Integer> f, final List<Integer> g) {
-    final int fDegree = f.size() - 1;
-    final int gDegree = g.size() - 1;
+    return PolyMultP1.polyMult(f, g, true);
+  }
+
+  // TODO JavaDoc (make sure to explain algorithm)
+  public static List<Integer> polyMult(List<Integer> f, List<Integer> g, final boolean optimize) {
+    int fDegree = f.size() - 1;
+    int gDegree = g.size() - 1;
+
+    // ensure f has a smaller degree if possible
+    if (gDegree < fDegree) {
+      final List<Integer> swap = f;
+      final int swapDegree = fDegree;
+      f = g;
+      g = swap;
+      fDegree = gDegree;
+      gDegree = swapDegree;
+    }
+
+    if (optimize) {
+      // Avoid expensive looping if possible.
+      if (fDegree == 0) {
+        // scalar multiplication * n-omial = n-omial
+        final int f_a = f.get(0);
+        return g.stream().map(n -> n * f_a).collect(Collectors.toList());
+      }
+      if (fDegree == 1 && gDegree == 1) {
+        // binomial * binomial = trinomial
+        final int f_a = f.get(0), f_b = f.get(1);
+        final int g_a = g.get(0), g_b = g.get(1);
+        return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_b * g_b);
+      }
+      if (fDegree == 1 && gDegree == 2) {
+        // binomial * trinomial
+        final int f_a = f.get(0), f_b = f.get(1);
+        final int g_a = g.get(0), g_b = g.get(1), g_c = g.get(2);
+        return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_a * g_c + f_b * g_b, f_b * g_c);
+      }
+      if (fDegree == 2 && gDegree == 2) {
+        // trinomial * trinomial
+        final int f_a = f.get(0), f_b = f.get(1), f_c = f.get(2);
+        final int g_a = g.get(0), g_b = g.get(1), g_c = g.get(2);
+        return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_a * g_c + g_a * f_c + f_b * g_b,
+            f_b * g_c + g_b * f_c, f_c * g_c);
+      }
+    }
+    System.out.println("Unoptimized");
+
     final int hDegree = fDegree + gDegree;
     final List<Integer> h = new ArrayList<>(hDegree + 1);
-    
-    for (int i = 0; i <= hDegree; i++) {
+
+    for (int termDegree = 0; termDegree <= hDegree; termDegree++) {
       // additive identity
-      int c = 0;
-      for (int j = 0; j <= i; j++) {
-        final int a;
-        if (j <= fDegree) {
-          a = f.get(j);
+      int sum = 0;
+      for (int focusedTerm = 0; focusedTerm <= termDegree; focusedTerm++) {
+        final int f_n;
+        if (focusedTerm <= fDegree) {
+          f_n = f.get(focusedTerm);
         } else {
-          // j only grows, so break now
+          // focusedTerm only grows, so break now
           break;
         }
-        final int b;
-        if (i - j <= gDegree) {
-          b = g.get(i - j);
+        final int g_n;
+        if (termDegree - focusedTerm <= gDegree) {
+          g_n = g.get(termDegree - focusedTerm);
         } else {
-          // i - j only shrinks, so keep going, but skip to the good bits
-          // starts up again when i - j == gDegree === i - gDegree == j
-          j = i - gDegree - 1;
-          continue;
+          // termDegree - focusedTerm only shrinks, so keep going, but skip to the good bits
+          // starts up again when
+          // termDegree - focusedTerm == gDegree ===
+          // termDegree - gDegree == focusedTerm
+          focusedTerm = termDegree - gDegree - 1;
+          continue; // adds the missing 1 to focusedTerm
         }
-        c += a * b;
+        sum += f_n * g_n;
       }
-      h.add(i, c);
+      h.add(termDegree, sum);
     }
     return h;
   }
 
   // TODO JavaDoc
-  public static List<Integer> foldPolyMult(final Iterator<List<Integer>> funs) {
-    if (!funs.hasNext()) {
+  public static List<Integer> foldPolyMult(final Iterator<List<Integer>> polys) {
+    if (!polys.hasNext()) {
       return Collections.singletonList(1);
     }
-    List<Integer> product = funs.next();
-    while (funs.hasNext()) {
-      product = PolyMultP1.polyMult(product, funs.next());
+    List<Integer> product = polys.next();
+    while (polys.hasNext()) {
+      product = PolyMultP1.polyMult(product, polys.next());
     }
     return product;
   }
@@ -84,23 +173,17 @@ public class PolyMultP1 {
     final int polySize = poly.size();
     final StringBuilder sb = new StringBuilder();
 
-    if (polySize == 0) {
-      return " 0";
-    }
-
-    if (polySize > 0) {
-      sb.append(String.format("% d", poly.get(0)));
-    }
+    sb.append(String.format("% d", poly.get(0)));
     if (polySize > 1) {
       sb.append(' ');
-      spacedNum(sb, poly.get(1));
+      PolyMultP1.spacedNum(sb, poly.get(1));
       sb.append('x');
     }
     for (int i = 2; i < poly.size(); i++) {
       sb.append(' ');
-      spacedNum(sb, poly.get(i));
+      PolyMultP1.spacedNum(sb, poly.get(i));
       sb.append("x^");
-      sb.append(i - 1);
+      sb.append(i);
     }
     return sb.toString();
   }
@@ -110,39 +193,37 @@ public class PolyMultP1 {
     final int polySize = poly.size();
     final StringBuilder sb = new StringBuilder();
 
-    if (polySize == 0) {
-      return " 0";
-    } else if (polySize == 1) {
+    if (polySize == 1) {
       return String.format("% d", poly.get(0));
     } else if (polySize == 2) {
       sb.append(String.format("% dx ", poly.get(1)));
-      spacedNum(sb, poly.get(0));
+      PolyMultP1.spacedNum(sb, poly.get(0));
       return sb.toString();
     }
 
     sb.append(String.format("% dx^%d", poly.get(polySize - 1), polySize - 1));
     for (int i = polySize - 2; i >= 2; i--) {
       sb.append(' ');
-      spacedNum(sb, poly.get(i));
+      PolyMultP1.spacedNum(sb, poly.get(i));
       sb.append("x^");
       sb.append(i);
     }
     sb.append(' ');
-    spacedNum(sb, poly.get(1));
+    PolyMultP1.spacedNum(sb, poly.get(1));
     sb.append("x ");
-    spacedNum(sb, poly.get(0));
+    PolyMultP1.spacedNum(sb, poly.get(0));
     return sb.toString();
   }
 
   public static void spacedNum(final StringBuilder sb, final int n) {
-    sb.append(n > 0 ? '+' : '-');
+    sb.append(n < 0 ? '-' : '+');
     sb.append(' ');
     sb.append(Math.abs(n));
   }
 
   // "Premature optimization is the root of all evil." - Donald Knuth
   // That being said, this was quite fun to write. (Except for the iterators.)
-  
+
   // TODO JavaDoc (class & unique methods)
   public static class Binomial implements List<Integer> {
     public int constant;
