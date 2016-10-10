@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    compile 'com.google.guava:guava:19.0'
+
     testCompile 'org.slf4j:slf4j-api:1.7.21'
     testCompile 'junit:junit:4.12'
     testCompile 'com.pholser:junit-quickcheck-core:0.6.1'
