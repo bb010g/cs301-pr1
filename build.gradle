@@ -32,3 +32,23 @@ jacocoTestReport {
         })
     }
 }
+
+compileJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
+version = '1.0'
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Project 1',
+                   'Implementation-Version': version
+    }
+}
+
+eclipse {
+    project {
+        natures 'org.eclipse.buildship.core.gradleprojectnature'
+    }
+}
+

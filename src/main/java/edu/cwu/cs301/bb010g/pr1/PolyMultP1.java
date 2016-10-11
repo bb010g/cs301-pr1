@@ -1,10 +1,10 @@
 package edu.cwu.cs301.bb010g.pr1;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,20 +15,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
+
+import com.google.common.io.Files;
 
 // TODO JavaDoc
 public class PolyMultP1 {
   public static void main(final String[] args) {
-    try (final FileInputStream fis = new FileInputStream("binomials.txt");
-        final InputStreamReader isr = new InputStreamReader(fis);
-        final BufferedReader br = new BufferedReader(isr);) {
+    main(Arrays.asList(args));
+  }
 
-      final List<Integer> product = readPolyMult(br);
+  public static void main(final List<String> args) {
+    try (final BufferedReader br =
+        Files.newReader(new File("binomials.txt"), StandardCharsets.UTF_8);) {
+
+      final List<Integer> product = PolyMultP1.readPolyMult(br);
       System.out.println(PolyMultP1.formatPolyDec(product));
 
     } catch (final FileNotFoundException e) {
-      System.out.println("File binomials.txt is missing.");
+      System.err.println("File binomials.txt is missing.");
     } catch (final IOException e) {
       e.printStackTrace();
     }
@@ -45,14 +49,16 @@ public class PolyMultP1 {
         break;
       }
 
-      polys.push(PolyMultP1.parseBinomialDec(line.toCharArray()));
+      polys.push(PolyMultP1.prunePoly(PolyMultP1.parseBinomialDec(line.toCharArray())));
       foldThresholds.set(0, foldThresholds.get(0) + 1);
 
       int fti;
       while ((fti = foldThresholds.indexOf(2)) != -1) {
         final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
-        System.out.println("Folding (" + fti + ") (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
-            + PolyMultP1.formatPolyInc(poly2) + ")");
+        /*
+         * System.out.println("Folding (" + fti + ") (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
+         * + PolyMultP1.formatPolyInc(poly2) + ")");
+         */
         polys.push(PolyMultP1.polyMult(poly1, poly2));
         foldThresholds.set(fti, 0);
         if (foldThresholds.size() == fti + 1) {
@@ -68,8 +74,10 @@ public class PolyMultP1 {
     } else {
       while (polys.size() > 1) {
         final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
-        System.out.println("Folding (end) (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
-            + PolyMultP1.formatPolyInc(poly2) + ")");
+        /*
+         * System.out.println("Folding (end) (" + PolyMultP1.formatPolyInc(poly1) + ") * (" +
+         * PolyMultP1.formatPolyInc(poly2) + ")");
+         */
         polys.push(PolyMultP1.polyMult(poly1, poly2));
       }
     }
@@ -100,7 +108,11 @@ public class PolyMultP1 {
       if (fDegree == 0) {
         // scalar multiplication * n-omial = n-omial
         final int f_a = f.get(0);
-        return g.stream().map(n -> n * f_a).collect(Collectors.toList());
+        final List<Integer> res = new ArrayList<>(g.size());
+        for (final int n : g) {
+          res.add(f_a * n);
+        }
+        return res;
       }
       if (fDegree == 1 && gDegree == 1) {
         // binomial * binomial = trinomial
@@ -122,7 +134,7 @@ public class PolyMultP1 {
             f_b * g_c + g_b * f_c, f_c * g_c);
       }
     }
-    System.out.println("Unoptimized");
+    // System.out.println("Unoptimized");
 
     final int hDegree = fDegree + gDegree;
     final List<Integer> h = new ArrayList<>(hDegree + 1);
@@ -219,6 +231,14 @@ public class PolyMultP1 {
     sb.append(n < 0 ? '-' : '+');
     sb.append(' ');
     sb.append(Math.abs(n));
+  }
+
+  public static List<Integer> prunePoly(final List<Integer> poly) {
+    int lastActual = poly.size() - 1;
+    while (poly.get(lastActual) == 0) {
+      lastActual--;
+    }
+    return poly.subList(0, lastActual + 1);
   }
 
   // "Premature optimization is the root of all evil." - Donald Knuth
