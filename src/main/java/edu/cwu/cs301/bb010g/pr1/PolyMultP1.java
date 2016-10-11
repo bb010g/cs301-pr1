@@ -758,7 +758,7 @@ public class PolyMultP1 {
         case COEFFICIENT:
           switch (c) {
             case 'x':
-              coefficient = Integer.parseUnsignedInt(numBuilder.toString());
+              coefficient = Integer.parseInt(numBuilder.toString());
               numBuilder.setLength(0); // clear the StringBuilder
               if (negNum) {
                 coefficient *= -1;
@@ -787,7 +787,7 @@ public class PolyMultP1 {
       }
     }
     // ends on a finished numBuilder
-    constant = Integer.parseUnsignedInt(numBuilder.toString());
+    constant = Integer.parseInt(numBuilder.toString());
     if (negNum) {
       constant *= -1;
     }
@@ -821,7 +821,7 @@ public class PolyMultP1 {
         case CONSTANT:
           switch (c) {
             case ' ':
-              int constant = Integer.parseUnsignedInt(numBuilder.toString());
+              int constant = Integer.parseInt(numBuilder.toString());
               numBuilder.setLength(0); // clear the StringBuilder
               if (negNum) {
                 constant *= -1;
@@ -847,7 +847,7 @@ public class PolyMultP1 {
         case COEFFICIENT:
           switch (c) {
             case 'x':
-              int coeff = Integer.parseUnsignedInt(numBuilder.toString());
+              int coeff = Integer.parseInt(numBuilder.toString());
               numBuilder.setLength(0); // clear the StringBuilder
               if (negNum) {
                 coeff *= -1;

@@ -82,6 +82,10 @@ public class FactorP1 {
         }
       }
     }
+    
+    public void remove() {
+      throw new UnsupportedOperationException("remove");
+    }
   }
 
   public static class FactorInnerIter implements Iterator<Pair<BigInteger, FactorType>> {
@@ -156,6 +160,10 @@ public class FactorP1 {
         }
       }
       return ret;
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException("remove");
     }
   }
 
