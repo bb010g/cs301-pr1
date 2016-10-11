@@ -1,5 +1,11 @@
 package edu.cwu.cs301.bb010g.pr1;
 
+/**
+ * A stupid tuple class because Java seems to think you should always write your own for these sort
+ * of situations. Well yeah, I could write my own hashmap every time I needed to make a phonebook
+ * class too. But we're programmers and like to be lazy. Maybe I just want to stick two things
+ * together, okay?
+ */
 public class Pair<A, B> {
   public A fst;
   public B snd;
@@ -8,7 +14,7 @@ public class Pair<A, B> {
     this.fst = fst;
     this.snd = snd;
   }
-  
+
   public static <A, B> Pair<A, B> of(final A fst, final B snd) {
     return new Pair<>(fst, snd);
   }

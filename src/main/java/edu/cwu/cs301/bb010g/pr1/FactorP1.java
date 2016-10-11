@@ -38,6 +38,9 @@ public class FactorP1 {
     }
   }
 
+  /**
+   * A tag for {@link FactorInnerIter} to tell what type of factor is being put out.
+   */
   public static enum FactorType {
     PRIME, FACTOR;
   }
@@ -71,6 +74,8 @@ public class FactorP1 {
             this.sqrtCount += head.sqrtCount;
           }
         }
+        // If it's a prime, we've got a valuable factor and return it. If it's just another
+        // indeterminate factor, try to get more out of it.
         switch (out.snd) {
           case PRIME:
             // System.out.println();
@@ -82,7 +87,8 @@ public class FactorP1 {
         }
       }
     }
-    
+
+    // This is a default in Java 8. Isn't that nice?
     public void remove() {
       throw new UnsupportedOperationException("remove");
     }
@@ -107,6 +113,8 @@ public class FactorP1 {
       if (this.done) {
         throw new NoSuchElementException();
       }
+      // If it's negative, immediately eliminate -1 as a factor. As a bonus, we can kill 0 here too
+      // for just an int comparison!
       switch (this.n.signum()) {
         case -1:
           this.n = this.n.abs();
@@ -115,6 +123,8 @@ public class FactorP1 {
           this.done = true;
           return Pair.of(ZERO, FactorType.PRIME);
       }
+      // Check if it's even and immediately divide by two. If it actually is two, take care of it
+      // right here.
       if (this.n.remainder(FactorP1.TWO).equals(FactorP1.ZERO)) {
         if (this.n.equals(FactorP1.TWO)) {
           this.done = true;
@@ -123,7 +133,11 @@ public class FactorP1 {
         }
         return Pair.of(FactorP1.TWO, FactorType.PRIME);
       }
+      // The combination of the named block and ret variable allow for what acts a lot like early
+      // return without the actually returning part so we can finish up a bit after.
       final Pair<BigInteger, FactorType> ret;
+      // This is the algorithm described in the project specification. Results are tagged with
+      // whether they're a prime or just another factor to continue looking at.
       ret: {
         this.sqrtCount++;
         BigInteger x = BigIntegerMath.sqrt(this.n, RoundingMode.FLOOR);
@@ -153,6 +167,7 @@ public class FactorP1 {
           }
         }
       }
+      // If we hit one somehow, handle it so we don't start looping (1^2 = 1).
       if (this.n.equals(ONE)) {
         this.done = true;
         if (ret.fst.equals(ONE)) {
@@ -162,6 +177,7 @@ public class FactorP1 {
       return ret;
     }
 
+    // This is a default in Java 8. Isn't that nice?
     public void remove() {
       throw new UnsupportedOperationException("remove");
     }

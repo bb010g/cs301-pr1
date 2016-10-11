@@ -18,7 +18,10 @@ import java.util.NoSuchElementException;
 
 import com.google.common.io.Files;
 
-// TODO JavaDoc
+/**
+ * A polynomial represented by a {@link List<Integer>} in this class is expressed as a list of
+ * {@link Integer}s of increasing degree (starting with the constant term).
+ */
 public class PolyMultP1 {
   public static void main(final String[] args) {
     main(Arrays.asList(args));
@@ -34,14 +37,26 @@ public class PolyMultP1 {
     } catch (final FileNotFoundException e) {
       System.err.println("File binomials.txt is missing.");
     } catch (final IOException e) {
+      // Don't really care about generic IO problems
       e.printStackTrace();
     }
   }
 
+  /**
+   * Multiplies a series of binomials separated by line breaks.
+   *
+   * @param br The source of the binomials.
+   * @return The polynomial product.
+   * @throws IOException Reading error.
+   */
   public static List<Integer> readPolyMult(final BufferedReader br) throws IOException {
     final Deque<List<Integer>> polys = new ArrayDeque<>();
-    final List<Integer> foldThresholds = new ArrayList<>();
-    foldThresholds.add(0);
+    // foldBuildups makes sure that we're doing smaller, cheaper multiplications
+    // along the way. Each level of folding has its own amount of buildup
+    // before it reaches the threshold of 2 and is folded and cleaned up.
+    final List<Integer> foldQueue = new ArrayList<>();
+    // Start out the process with zero binomials waiting in the queue.
+    foldQueue.add(0);
 
     while (true) {
       final String line = br.readLine();
@@ -49,30 +64,41 @@ public class PolyMultP1 {
         break;
       }
 
+      // Read in a binomial and mark it as a part of the queue
       polys.push(PolyMultP1.prunePoly(PolyMultP1.parseBinomialDec(line.toCharArray())));
-      foldThresholds.set(0, foldThresholds.get(0) + 1);
+      foldQueue.set(0, foldQueue.get(0) + 1);
 
-      int fti;
-      while ((fti = foldThresholds.indexOf(2)) != -1) {
+      // Fold polynomials of a certain degree if their queue is large enough to
+      // trigger the threshold of 2.
+      int fqi;
+      while ((fqi = foldQueue.indexOf(2)) != -1) {
+        // Smaller polynomials will always be at the front of the queue due to
+        // them being the most recently read and the folding process always
+        // dealing with the same degree, ensuring the polynomials behind its
+        // intermediary product are of the same degree or larger.
         final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
         /*
          * System.out.println("Folding (" + fti + ") (" + PolyMultP1.formatPolyInc(poly1) + ") * ("
-         * + PolyMultP1.formatPolyInc(poly2) + ")");
+         * * + PolyMultP1.formatPolyInc(poly2) + ")");
          */
         polys.push(PolyMultP1.polyMult(poly1, poly2));
-        foldThresholds.set(fti, 0);
-        if (foldThresholds.size() == fti + 1) {
-          foldThresholds.add(fti + 1, 1);
+        // Mark that the queue for this degree has been cleared and the next
+        // degree has a new member.
+        foldQueue.set(fqi, 0);
+        if (foldQueue.size() == fqi + 1) {
+          foldQueue.add(fqi + 1, 1);
         } else {
-          foldThresholds.set(fti + 1, foldThresholds.get(fti + 1) + 1);
+          foldQueue.set(fqi + 1, foldQueue.get(fqi + 1) + 1);
         }
       }
     }
 
     if (polys.isEmpty()) {
+      // There were no lines with polynomials, so use the multiplicative identity.
       polys.push(Collections.singletonList(1));
     } else {
       while (polys.size() > 1) {
+        // Clean up the remaining polynomials that didn't trigger a folding previously.
         final List<Integer> poly1 = polys.pop(), poly2 = polys.pop();
         /*
          * System.out.println("Folding (end) (" + PolyMultP1.formatPolyInc(poly1) + ") * (" +
@@ -81,14 +107,24 @@ public class PolyMultP1 {
         polys.push(PolyMultP1.polyMult(poly1, poly2));
       }
     }
+    // The product is the only polynomial remaining.
     return polys.pop();
   }
 
+  // Assume that we want to optimize
   public static List<Integer> polyMult(final List<Integer> f, final List<Integer> g) {
     return PolyMultP1.polyMult(f, g, true);
   }
 
-  // TODO JavaDoc (make sure to explain algorithm)
+  /**
+   * Multiply two polynomials.
+   * 
+   * @param f A factor polynomial.
+   * @param g A factor polynomial.
+   * @param optimize Whether to use the constant time optimizations for multiplications involving
+   *        smaller degrees.
+   * @return The product polynomial.
+   */
   public static List<Integer> polyMult(List<Integer> f, List<Integer> g, final boolean optimize) {
     int fDegree = f.size() - 1;
     int gDegree = g.size() - 1;
@@ -121,13 +157,13 @@ public class PolyMultP1 {
         return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_b * g_b);
       }
       if (fDegree == 1 && gDegree == 2) {
-        // binomial * trinomial
+        // binomial * trinomial = 4-term
         final int f_a = f.get(0), f_b = f.get(1);
         final int g_a = g.get(0), g_b = g.get(1), g_c = g.get(2);
         return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_a * g_c + f_b * g_b, f_b * g_c);
       }
       if (fDegree == 2 && gDegree == 2) {
-        // trinomial * trinomial
+        // trinomial * trinomial = 5-term
         final int f_a = f.get(0), f_b = f.get(1), f_c = f.get(2);
         final int g_a = g.get(0), g_b = g.get(1), g_c = g.get(2);
         return Arrays.asList(f_a * g_a, f_a * g_b + g_a * f_b, f_a * g_c + g_a * f_c + f_b * g_b,
@@ -168,7 +204,13 @@ public class PolyMultP1 {
     return h;
   }
 
-  // TODO JavaDoc
+
+  /**
+   * Compute the product of a series of polynomials.
+   *
+   * @param polys A series of polynomials.
+   * @return Their product.
+   */
   public static List<Integer> foldPolyMult(final Iterator<List<Integer>> polys) {
     if (!polys.hasNext()) {
       return Collections.singletonList(1);
@@ -180,7 +222,12 @@ public class PolyMultP1 {
     return product;
   }
 
-  // TODO JavaDoc
+  /**
+   * Pretty-print a polynomial with the terms ordered by increasing degree.
+   * 
+   * @param poly The polynomial to be printed.
+   * @return The pretty-printing.
+   */
   public static String formatPolyInc(final List<Integer> poly) {
     final int polySize = poly.size();
     final StringBuilder sb = new StringBuilder();
@@ -200,7 +247,12 @@ public class PolyMultP1 {
     return sb.toString();
   }
 
-  // TODO JavaDoc
+  /**
+   * Pretty-print a polynomial with the terms ordered by decreasing degree.
+   * 
+   * @param poly The polynomial to be printed.
+   * @return The pretty-printing.
+   */
   public static String formatPolyDec(final List<Integer> poly) {
     final int polySize = poly.size();
     final StringBuilder sb = new StringBuilder();
@@ -227,12 +279,21 @@ public class PolyMultP1 {
     return sb.toString();
   }
 
+  // Utility method to append a number's sign, space, and then the digits of the
+  // number.
   public static void spacedNum(final StringBuilder sb, final int n) {
     sb.append(n < 0 ? '-' : '+');
     sb.append(' ');
     sb.append(Math.abs(n));
   }
 
+  /**
+   * Removes trailing zero terms so the size of the List accurately represents the degree of the
+   * polynomial represented.
+   * 
+   * @param poly A polynomial
+   * @return A mathematically equivalent polynomial
+   */
   public static List<Integer> prunePoly(final List<Integer> poly) {
     int lastActual = poly.size() - 1;
     while (poly.get(lastActual) == 0) {
@@ -244,7 +305,11 @@ public class PolyMultP1 {
   // "Premature optimization is the root of all evil." - Donald Knuth
   // That being said, this was quite fun to write. (Except for the iterators.)
 
-  // TODO JavaDoc (class & unique methods)
+  /**
+   * A two element tuple that acts like a list. List implementations are annoying. See {@link List}
+   * for details on what everything does. Anything that would mutate the size throws
+   * {@link UnsupportedOperationException}.
+   */
   public static class Binomial implements List<Integer> {
     public int constant;
     public int coefficient;
@@ -733,11 +798,22 @@ public class PolyMultP1 {
     }
   }
 
+  // Representation of the parsing state machine's state
   private static enum BinomialDecParseState {
     SIGN, COEFFICIENT, OPERATOR, CONSTANT
   }
 
-  // TODO JavaDoc
+  /**
+   * Parses binomials of the first degree of the following form:
+   * 
+   * The first character shall be a space or a {@code -} if the coefficient is negative. The
+   * characters until the {@code x} shall be the digits of the coefficient. The {@code x} shall
+   * immediately be followed by a space and the operator for the constant term. The operator for the
+   * constant term shall be either {@code +} or {@code -}. After the operator shall follow one space
+   * and the digits of the constant term. The digits of the constant term shall not have a sign
+   * attached. The sign shall instead be conveyed by the operator. After these digits, the string
+   * shall end.
+   */
   public static List<Integer> parseBinomialDec(final char[] chars) {
     int constant = 0;
     int coefficient = 0;
@@ -797,11 +873,13 @@ public class PolyMultP1 {
 
   // Once more, with feeling!
 
+  // Representation of the parsing state machine's state
   private static enum PolyIncParseState {
     SIGN, CONSTANT, COEFFICIENT, EXPONENT, OPERATOR
   }
 
-  // TODO JavaDoc
+  // It's a lot like the other one, except it can handle more stuff. This is extra, so read the code
+  // to figure out what it can handle.
   public static List<Integer> parsePolyInc(final char[] chars) {
     final List<Integer> poly = new ArrayList<>();
 
