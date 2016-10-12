@@ -9,5 +9,6 @@ esac
 if [[ -z $class ]]; then
   exec ./gradlew run -q
 else
-  exec ./gradlew run -q -PmainClass="edu.cwu.cs301.bb010g.pr1.${class}P1"
+  shift
+  exec ./gradlew run -q -PmainClass="edu.cwu.cs301.bb010g.pr1.${class}P1" "$@"
 fi

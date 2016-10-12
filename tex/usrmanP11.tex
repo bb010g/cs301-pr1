@@ -1,0 +1,30 @@
+\input{cover-header}
+
+\starttext
+\coverbegin{1}{PolyMult}
+    {Brayden Banks (36318065)}
+    {Rico Adrian (38298506)}
+
+{\bf Program Description:} Computes a product of first degree polynomials with
+integer coefficients. Inputs come from a file.
+
+{\bf Use of the Program:} The user shall provide a series of 1\high{st} degree
+binomials in the following form (otherwise behavior is undefined):
+
+The first character shall be a space or a \code{-} if the coefficient is
+negative. The characters until the \code{x} shall be the decimal digits of the
+coefficient. The \code{x} shall immediately be followed by a space and the
+operator for the constant term. The operator for the constant term shall be
+either \code{+} or \code{-}. After the operator shall follow one space and the
+decimal digits of the constant term. The digits of the constant term shall not
+have a sign attached. The sign shall instead be conveyed by the operator. After
+these digits, the string shall end.
+
+An empty line will halt parsing if encountered. These binomials shall be in a
+file named \code{binomials.txt}. The program will print the product of the given
+polynomials to standard output in decreasing degree.
+
+{\bf Bugs:} Any number provided ($n$) must satisfy $\abs{n} < 2^{31}$.
+
+\stoptext
+

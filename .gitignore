@@ -80,6 +80,14 @@ gradle-app.setting
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 
+###
+### ConTeXt
+###
+
+tex/*.log
+tex/*.tuc
+tex/*.pdf
+
 ##
 ## Eclipse
 ##

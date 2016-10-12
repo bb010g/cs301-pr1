@@ -141,6 +141,10 @@ public class PolyMultP1 {
 
     if (optimize) {
       // Avoid expensive looping if possible.
+      if (fDegree == -1) {
+        // 0 * x = 0
+        return Collections.emptyList();
+      }
       if (fDegree == 0) {
         // scalar multiplication * n-omial = n-omial
         final int f_a = f.get(0);
@@ -230,6 +234,9 @@ public class PolyMultP1 {
    */
   public static String formatPolyInc(final List<Integer> poly) {
     final int polySize = poly.size();
+    if (polySize == 0) {
+      return " 0";
+    }
     final StringBuilder sb = new StringBuilder();
 
     sb.append(String.format("% d", poly.get(0)));
@@ -257,12 +264,15 @@ public class PolyMultP1 {
     final int polySize = poly.size();
     final StringBuilder sb = new StringBuilder();
 
-    if (polySize == 1) {
-      return String.format("% d", poly.get(0));
-    } else if (polySize == 2) {
-      sb.append(String.format("% dx ", poly.get(1)));
-      PolyMultP1.spacedNum(sb, poly.get(0));
-      return sb.toString();
+    switch (polySize) {
+      case 0:
+        return " 0";
+      case 1:
+        return String.format("% d", poly.get(0));
+      case 2:
+        sb.append(String.format("% dx ", poly.get(1)));
+        PolyMultP1.spacedNum(sb, poly.get(0));
+        return sb.toString();
     }
 
     sb.append(String.format("% dx^%d", poly.get(polySize - 1), polySize - 1));
@@ -296,7 +306,7 @@ public class PolyMultP1 {
    */
   public static List<Integer> prunePoly(final List<Integer> poly) {
     int lastActual = poly.size() - 1;
-    while (poly.get(lastActual) == 0) {
+    while (poly.get(lastActual) == 0 && lastActual > 0) {
       lastActual--;
     }
     return poly.subList(0, lastActual + 1);
@@ -875,7 +885,7 @@ public class PolyMultP1 {
 
   // Representation of the parsing state machine's state
   private static enum PolyIncParseState {
-    SIGN, CONSTANT, COEFFICIENT, EXPONENT, OPERATOR
+    SIGN, CONSTANT, OPERATOR, COEFFICIENT, EXPONENT
   }
 
   // It's a lot like the other one, except it can handle more stuff. This is extra, so read the code

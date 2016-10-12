@@ -1,0 +1,34 @@
+\setuppapersize[letter][letter]
+\setuplayout[edge=0in, margin=1in, margindistance=0in,
+  width=fit, height=fit,
+  header=0.5in, footer=0.5in, headerdistance=0in, footerdistance=0in,
+  topspace=0.5in, bottomspace=0.5in,
+  topdistance=0in, bottomdistance=0in]
+%\showframe
+%\showboxes
+
+\enabledirectives[system.synctex]
+
+\definefontfamily[ubuntu][rm][Ubuntu]
+\definefontfamily[ubuntu][tt][Ubuntu Mono]
+\definefallbackfamily[ubuntu][math][Ubuntu][math:lowercaseitalic]
+\definefallbackfamily[ubuntu][math][Ubuntu][math:digitsnormal]
+\definefontfamily[ubuntu][math][TeX Gyre Pagella Math]
+\setupbodyfont[ubuntu, 12pt]
+\definefontfeature[default][default][protrusion=quality,expansion=quality]
+\setupalign[hz]
+
+\setuppagenumbering[location=]
+\setupindenting[yes, small]
+
+\define[1]\code{\unhyphenated{\tt #1}}
+\define[1]\abs{\lvert #1 \rvert}
+
+\define[4]\coverbegin{{%
+\noindenting #3 \\
+#4 \\
+CS-301 \\
+Fall 2016 \\
+Project #1}
+
+\midaligned{\bf Program #2}}
